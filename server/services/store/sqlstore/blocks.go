@@ -908,6 +908,8 @@ func (s *SQLStore) duplicateBlock(db sq.BaseRunner, boardID string, blockID stri
 func (s *SQLStore) deleteBlockChildren(db sq.BaseRunner, boardID string, parentID string, modifiedBy string) error {
 	now := utils.GetMillis()
 
+	s.logger.Debug("deleteBlockChildren", mlog.String("boardID", boardID), mlog.String("parentID", parentID), mlog.String("modifiedBy", modifiedBy))
+
 	selectQuery := s.getQueryBuilder(db).
 		Select(
 			"board_id",
@@ -930,6 +932,7 @@ func (s *SQLStore) deleteBlockChildren(db sq.BaseRunner, boardID string, parentI
 		selectQuery = selectQuery.Where(sq.Eq{"parent_id": parentID})
 	}
 
+	s.logger.Debug("s.getQueryBuilder(db).Insert(s.tablePrefix+blocks_history)")
 	insertQuery := s.getQueryBuilder(db).
 		Insert(s.tablePrefix+"blocks_history").
 		Columns(
@@ -951,6 +954,7 @@ func (s *SQLStore) deleteBlockChildren(db sq.BaseRunner, boardID string, parentI
 		return err
 	}
 
+	s.logger.Debug("s.getQueryBuilder(db).Select(s.blockFields()...)")
 	fileDeleteQuery := s.getQueryBuilder(db).
 		Select(s.blockFields("")...).
 		From(s.tablePrefix + "blocks").
@@ -960,15 +964,19 @@ func (s *SQLStore) deleteBlockChildren(db sq.BaseRunner, boardID string, parentI
 		fileDeleteQuery = fileDeleteQuery.Where(sq.Eq{"parent_id": parentID})
 	}
 
+	s.logger.Debug("fileDeleteQuery.Query()")
 	rows, err := fileDeleteQuery.Query()
 	if err != nil {
 		return err
 	}
+	s.logger.Debug("defer s.CloseRows(rows)")
 	defer s.CloseRows(rows)
+	s.logger.Debug("s.blocksFromRows(rows)")
 	blocks, err := s.blocksFromRows(rows)
 	if err != nil {
 		return err
 	}
+	s.logger.Debug("len block", mlog.String("blocks", len(blocks)))
 
 	fileIDs := make([]string, 0, len(blocks))
 	for _, block := range blocks {
@@ -982,6 +990,7 @@ func (s *SQLStore) deleteBlockChildren(db sq.BaseRunner, boardID string, parentI
 		}
 	}
 
+	s.logger.Debug("len fileIDs", mlog.String("fileIDs", len(fileIDs)))
 	if len(fileIDs) > 0 {
 		deleteFileInfoQuery := s.getQueryBuilder(db).
 			Update("FileInfo").
@@ -993,6 +1002,7 @@ func (s *SQLStore) deleteBlockChildren(db sq.BaseRunner, boardID string, parentI
 		}
 	}
 
+	s.logger.Debug("s.getQueryBuilder(db).Delete(s.tablePrefix + blocks)")
 	deleteQuery := s.getQueryBuilder(db).
 		Delete(s.tablePrefix + "blocks").
 		Where(sq.Eq{"board_id": boardID})
@@ -1001,10 +1011,12 @@ func (s *SQLStore) deleteBlockChildren(db sq.BaseRunner, boardID string, parentI
 		deleteQuery = deleteQuery.Where(sq.Eq{"parent_id": parentID})
 	}
 
+	s.logger.Debug("deleteQuery.Exec()")
 	if _, err := deleteQuery.Exec(); err != nil {
 		return err
 	}
 
+	s.logger.Debug("deleteQuery.Exec() OK")
 	return nil
 }
 
