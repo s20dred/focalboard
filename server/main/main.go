@@ -91,7 +91,7 @@ func main() {
 		defer restore()
 	}
 
-	logger.info("EDCTEAM")
+	logger.Info("EDCTEAM")
 	model.LogServerInfo(logger)
 
 	singleUser := false
