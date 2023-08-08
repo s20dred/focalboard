@@ -976,7 +976,7 @@ func (s *SQLStore) deleteBlockChildren(db sq.BaseRunner, boardID string, parentI
 	if err != nil {
 		return err
 	}
-	s.logger.Debug("len block", mlog.String("blocks", len(blocks)))
+	s.logger.Debug("len block", mlog.Int("blocks", len(blocks)))
 
 	fileIDs := make([]string, 0, len(blocks))
 	for _, block := range blocks {
@@ -990,7 +990,7 @@ func (s *SQLStore) deleteBlockChildren(db sq.BaseRunner, boardID string, parentI
 		}
 	}
 
-	s.logger.Debug("len fileIDs", mlog.String("fileIDs", len(fileIDs)))
+	s.logger.Debug("len fileIDs", mlog.Int("fileIDs", len(fileIDs)))
 	if len(fileIDs) > 0 {
 		deleteFileInfoQuery := s.getQueryBuilder(db).
 			Update("FileInfo").
