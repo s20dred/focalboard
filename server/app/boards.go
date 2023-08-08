@@ -453,6 +453,8 @@ func (a *App) broadcastTeamUsers(teamID, boardID string, boardType model.BoardTy
 
 func (a *App) DeleteBoard(boardID, userID string) error {
 	board, err := a.store.GetBoard(boardID)
+
+	a.logger.Debug("DeleteBoard", mlog.String("boardID", boardID))
 	if model.IsErrNotFound(err) {
 		return nil
 	}
@@ -460,14 +462,17 @@ func (a *App) DeleteBoard(boardID, userID string) error {
 		return err
 	}
 
+	a.logger.Debug("a.store.DeleteBoard")
 	if err := a.store.DeleteBoard(boardID, userID); err != nil {
 		return err
 	}
+	a.logger.Debug("a.store.DeleteBoard OK")
 
 	a.blockChangeNotifier.Enqueue(func() error {
 		a.wsAdapter.BroadcastBoardDelete(board.TeamID, boardID)
 		return nil
 	})
+	a.logger.Debug("a.blockChangeNotifier.Enqueue OK")
 
 	go func() {
 		if err := a.UpdateCardLimitTimestamp(); err != nil {

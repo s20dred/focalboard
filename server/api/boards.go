@@ -429,9 +429,13 @@ func (a *API) handleDeleteBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	a.logger.Debug("Delete board. ", mlog.String("boardID", boardID), mlog.String("userID", userID))
+
 	auditRec := a.makeAuditRecord(r, "deleteBoard", audit.Fail)
 	defer a.audit.LogRecord(audit.LevelModify, auditRec)
 	auditRec.AddMeta("boardID", boardID)
+
+	a.logger.Debug("Add audit")
 
 	if err := a.app.DeleteBoard(boardID, userID); err != nil {
 		a.errorResponse(w, r, err)
