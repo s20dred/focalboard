@@ -418,15 +418,19 @@ func (s *SQLStore) deleteBoard(db sq.BaseRunner, boardID, userID string) error {
 func (s *SQLStore) deleteBoardAndChildren(db sq.BaseRunner, boardID, userID string, keepChildren bool) error {
 	now := utils.GetMillis()
 
+	s.logger.Debug("Board store")
+	s.logger.Debug("s.getBoard")
 	board, err := s.getBoard(db, boardID)
 	if err != nil {
 		return err
 	}
 
+	s.logger.Debug("s.MarshalJSONB")
 	propertiesBytes, err := s.MarshalJSONB(board.Properties)
 	if err != nil {
 		return err
 	}
+	s.logger.Debug("s.MarshalJSONB")
 	cardPropertiesBytes, err := s.MarshalJSONB(board.CardProperties)
 	if err != nil {
 		return err
@@ -454,19 +458,23 @@ func (s *SQLStore) deleteBoardAndChildren(db sq.BaseRunner, boardID, userID stri
 	}
 
 	// writing board history
+	s.logger.Debug("s.getQueryBuilder")
 	insertQuery := s.getQueryBuilder(db).Insert("").
 		Columns(boardHistoryFields()...)
 
+	s.logger.Debug("insertQuery.SetMap")
 	query := insertQuery.SetMap(insertQueryValues).Into(s.tablePrefix + "boards_history")
 	if _, err := query.Exec(); err != nil {
 		return err
 	}
 
+	s.logger.Debug("s.getQueryBuilder(db)Delete")
 	deleteQuery := s.getQueryBuilder(db).
 		Delete(s.tablePrefix + "boards").
 		Where(sq.Eq{"id": boardID}).
 		Where(sq.Eq{"COALESCE(team_id, '0')": board.TeamID})
 
+	s.logger.Debug("deleteQuery.Exec()")
 	if _, err := deleteQuery.Exec(); err != nil {
 		return err
 	}
@@ -475,6 +483,7 @@ func (s *SQLStore) deleteBoardAndChildren(db sq.BaseRunner, boardID, userID stri
 		return nil
 	}
 
+	s.logger.Debug("return s.deleteBlockChildren")
 	return s.deleteBlockChildren(db, boardID, "", userID)
 }
 
